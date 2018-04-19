@@ -1,0 +1,21 @@
+version: '2'
+
+services:
+
+    gitlab:
+      container_name: ${GITLAB_CONTAINER_NAME}
+      image: gitlab/gitlab-ce:latest
+      environment:
+        - VIRTUAL_HOST=${GITLAB_VIRTUAL_HOST}
+      ports:
+        - 3000:80
+      volumes:
+        - /data/gitlab/config:/etc/gitlab
+        - /data/gitlab/logs:/var/log/gitlab
+        - /data/gitlab/data:/var/opt/gitlab
+      #restart: always
+
+networks:
+  default:
+    external:
+      name: ${NETWORK_NAME}
