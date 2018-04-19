@@ -1,0 +1,48 @@
+# Here is what i used for wordpress packages
+# https://github.com/10up/WordPress-Server-Configs/blob/master/php-fpm/PHP%20Extensions%20for%20WordPress
+# You can also configure the extension - example here: RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \
+
+FROM php:5.6-fpm
+
+ARG PHP_PORT
+ARG HOST_UID
+
+RUN usermod -u $HOST_UID www-data
+
+RUN apt-get update
+
+RUN apt-get install gettext -y
+RUN apt-get install git -y
+RUN apt-get install wget -y
+RUN apt-get install libmcrypt-dev -y
+RUN apt-get install -y libxml2-dev
+RUN apt-get install -y libfreetype6-dev libjpeg62-turbo-dev libpng12-dev
+RUN apt-get install -y libmemcached-dev
+RUN apt-get install -y imagemagick
+
+# extensions
+RUN docker-php-ext-install -j$(nproc) iconv mcrypt
+RUN docker-php-ext-install mysql
+RUN docker-php-ext-install pdo
+RUN docker-php-ext-install pdo_mysql
+RUN docker-php-ext-install gd
+RUN docker-php-ext-install xml
+RUN docker-php-ext-install soap
+RUN docker-php-ext-install mbstring
+RUN docker-php-ext-install opcache
+RUN docker-php-ext-install zip
+# RUN pecl install memcached && docker-php-ext-enable memcached
+# RUN pecl install memcache && docker-php-ext-enable memcache
+
+# php.ini
+COPY php.ini /usr/local/etc/php/
+
+# www.conf
+COPY www.conf.template /usr/local/etc/php-fpm.d/www.conf.template
+RUN envsubst '$PHP_PORT' < /usr/local/etc/php-fpm.d/www.conf.template > /usr/local/etc/php-fpm.d/www.conf
+
+# install composer
+COPY install-composer.sh /tmp/install-composer.sh
+RUN chmod +x /tmp/install-composer.sh
+RUN bash /tmp/install-composer.sh
+VOLUME /root/.composer

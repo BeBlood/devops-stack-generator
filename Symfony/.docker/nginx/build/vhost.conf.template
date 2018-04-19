@@ -1,0 +1,23 @@
+server {
+    root ${NGINX_PUBLIC_DIR};
+
+    access_log /dev/stdout;
+    error_log /dev/stderr;
+
+    charset utf-8;
+
+    location / {
+        # try to serve file directly, fallback to app_dev.php
+        try_files $uri /${SYMFONY_ENTRYPOINT}$is_args$args;
+    }
+
+    location ~ ^/$SYMFONY_ENTRYPOINT(/|$) {
+        fastcgi_pass ${NGINX_PHP_BACKEND_NAME}:${NGINX_PHP_BACKEND_PORT};
+        fastcgi_split_path_info ^(.+\.php)(/.*)$;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param HTTPS off;
+        fastcgi_buffers 4 256k;
+        fastcgi_buffer_size 256k;
+    }
+}

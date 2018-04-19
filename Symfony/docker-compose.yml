@@ -1,0 +1,62 @@
+version: '2'
+
+services:
+
+    mysql:
+        container_name: ${MYSQL_CONTAINER_NAME}
+        image: mysql:${MYSQL_VERSION}
+        volumes:
+            - order-gateway-mysql:/var/lib/mysql:rw
+        environment:
+          - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+          - MYSQL_USER=${MYSQL_USER}
+          - MYSQL_DATABASE=${MYSQL_DATABASE}
+          - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+
+    adminer:
+        image: adminer
+        container_name: ${ADMINER_CONTAINER_NAME}
+        environment:
+          - VIRTUAL_HOST=${ADMINER_VIRTUAL_HOST}
+        depends_on:
+          - mysql
+
+    php:
+        container_name: ${PHP_CONTAINER_NAME}
+        build:
+          context: .docker/php/build
+          dockerfile: Dockerfile-${PHP_VERSION}
+          args:
+            - PHP_PORT=${PHP_PORT}
+            - HOST_UID=${HOST_UID}
+        user: ${HOST_UID}
+        volumes:
+          - ./:${NGINX_ROOT_DIR}
+        depends_on:
+          - mysql
+
+    nginx:
+        container_name: ${NGINX_CONTAINER_NAME}
+        build:
+          context: .docker/nginx/build
+          dockerfile: Dockerfile-${NGINX_VERSION}
+          args:
+            - NGINX_PUBLIC_DIR=${NGINX_PUBLIC_DIR}
+            - NGINX_PHP_BACKEND_NAME=${PHP_CONTAINER_NAME}
+            - NGINX_PHP_BACKEND_PORT=${PHP_PORT}
+            - HOST_UID=${HOST_UID}
+            - SYMFONY_ENTRYPOINT=${NGINX_SYMFONY_ENTRYPOINT}
+        environment:
+          - VIRTUAL_HOST=${PROJECT_DEV_HOST}
+        volumes_from:
+          - php
+        depends_on:
+          - php
+
+volumes:
+  order-gateway-mysql:
+
+networks:
+  default:
+    external:
+      name: ${NETWORK_NAME}
