@@ -1,0 +1,11 @@
+{
+    "name": "stack/apache",
+    "description": "Docker stack for apache",
+    "authors": [
+        {
+            "name": "Benjamin BOUDIER",
+            "email": "benjamin.boudier4@gmail.com"
+        }
+    ],
+    "require": {}
+}

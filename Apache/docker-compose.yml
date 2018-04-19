@@ -1,0 +1,63 @@
+version: '2'
+
+services:
+
+  apache:
+    container_name: ${APACHE_CONTAINER_NAME}
+    build:
+      context: .docker/apache
+      dockerfile: Dockerfile-${APACHE_VERSION}
+      args:
+        - APACHE_PORT=${APACHE_PORT}
+        - APACHE_DOCUMENT_ROOT=${APACHE_DOCUMENT_ROOT}
+        - APACHE_SERVER_NAME=${PROJECT_DEV_HOST}
+        - APACHE_PHP_BACKEND_NAME=${PHP_CONTAINER_NAME}
+        - APACHE_PHP_BACKEND_PORT=${PHP_PORT}
+        - PROJECT_PROD_URL=${PROJECT_PROD_URL}
+    volumes:
+      - ${PROJECT_PUBLIC_SOURCES}:/var/www/html:rw
+    environment:
+      - VIRTUAL_HOST=${PROJECT_DEV_HOST}
+    depends_on:
+      - php
+
+  php:
+    container_name: ${PHP_CONTAINER_NAME}
+    build:
+      context: .docker/php
+      dockerfile: Dockerfile-${PHP_VERSION}
+      args:
+        - PHP_PORT=${PHP_PORT}
+        - HOST_UID=${HOST_UID}
+    user: ${HOST_UID}
+    volumes:
+      - ${PROJECT_PUBLIC_SOURCES}:/var/www/html:rw
+    depends_on:
+      - mysql
+
+  mysql:
+    container_name: ${MYSQL_CONTAINER_NAME}
+    image: mysql:${MYSQL_VERSION}
+    volumes:
+      - ${MYSQL_CONTAINER_NAME}:/var/lib/mysql:rw
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+
+  adminer:
+    container_name: ${ADMINER_CONTAINER_NAME}
+    image: adminer
+    environment:
+      - VIRTUAL_HOST=${ADMINER_VIRTUAL_HOST}
+    depends_on:
+      - mysql
+
+volumes:
+  stack_mysql: # A modifier car pas dynamique = ${MYSQL_CONTAINER_NAME}
+
+networks:
+  default:
+    external:
+      name: ${NETWORK_NAME}
