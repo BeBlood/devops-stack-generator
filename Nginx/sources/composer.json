@@ -1,0 +1,10 @@
+{
+    "name": "stack/nginx",
+    "description": "A pre-configured skeleton for the Silex microframework",
+    "license": "MIT",
+    "type": "project",
+    "require": {},
+    "require-dev": {
+        "phpunit/phpunit": "^5.7"
+    }
+}

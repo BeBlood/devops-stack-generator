@@ -1,0 +1,17 @@
+FROM nginx:1.10
+
+ARG NGINX_PUBLIC_DIR
+ARG NGINX_PHP_BACKEND_NAME
+ARG NGINX_PHP_BACKEND_PORT
+ARG HOST_UID
+
+RUN usermod -u $HOST_UID www-data
+
+RUN apt-get update && apt-get install -y gettext
+
+# nginx.conf
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# vhost.conf
+COPY vhost.conf.template /etc/nginx/conf.d/vhost.conf.template
+RUN envsubst '$NGINX_PUBLIC_DIR $NGINX_PHP_BACKEND_NAME $NGINX_PHP_BACKEND_PORT' < /etc/nginx/conf.d/vhost.conf.template > /etc/nginx/conf.d/default.conf

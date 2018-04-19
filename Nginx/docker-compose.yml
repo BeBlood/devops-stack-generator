@@ -1,0 +1,62 @@
+version: '2'
+
+services:
+
+  php:
+    container_name: ${PHP_CONTAINER_NAME}
+    build:
+      context: .docker/php
+      dockerfile: Dockerfile-${PHP_VERSION}
+      args:
+          - PHP_PORT=${PHP_PORT}
+          - HOST_UID=${HOST_UID}
+    user: ${HOST_UID}
+    volumes:
+      - ./sources:${NGINX_ROOT_DIR}
+    #restart: always
+
+  nginx:
+    container_name: ${NGINX_CONTAINER_NAME}
+    image: idci-website/nginx:${NGINX_VERSION}
+    build:
+      context: .docker/nginx
+      dockerfile: Dockerfile-${NGINX_VERSION}
+      args:
+          - NGINX_PUBLIC_DIR=${NGINX_PUBLIC_DIR}
+          - NGINX_PHP_BACKEND_NAME=${PHP_CONTAINER_NAME}
+          - NGINX_PHP_BACKEND_PORT=${PHP_PORT}
+          - HOST_UID=${HOST_UID}
+    environment:
+      - VIRTUAL_HOST=${PROJECT_DEV_HOST}
+    volumes_from:
+      - php
+    depends_on:
+      - php
+    #restart: always
+
+  mysql:
+    container_name: ${MYSQL_CONTAINER_NAME}
+    image: mysql:${MYSQL_VERSION}
+    volumes:
+      - nginx-mysql:/var/lib/mysql:rw
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+
+  adminer:
+    container_name: ${ADMINER_CONTAINER_NAME}
+    image: adminer
+    environment:
+      - VIRTUAL_HOST=${ADMINER_VIRTUAL_HOST}
+    depends_on:
+      - mysql
+
+volumes:
+    nginx-mysql: {}
+
+networks:
+  default:
+    external:
+      name: ${NETWORK_NAME}

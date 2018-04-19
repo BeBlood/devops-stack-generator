@@ -1,0 +1,78 @@
+server {
+    root ${NGINX_PUBLIC_DIR};
+
+    gzip  on;
+    gzip_http_version 1.0;
+    gzip_comp_level 2;
+    gzip_min_length 1100;
+    gzip_buffers     4 8k;
+    gzip_proxied any;
+    gzip_types
+      # text/html is always compressed by HttpGzipModule
+      text/css
+      text/javascript
+      text/xml
+      text/plain
+      text/x-component
+      application/javascript
+      application/json
+      application/xml
+      application/rss+xml
+      font/truetype
+      font/opentype
+      application/vnd.ms-fontobject
+      image/svg+xml;
+
+      gzip_static on;
+
+      gzip_proxied        expired no-cache no-store private auth;
+      gzip_disable        "MSIE [1-6]\.";
+      gzip_vary           on;
+
+    #application/x-font-ttf           ttc ttf;
+    #application/x-font-otf           otf;
+    #application/font-woff            woff;
+    #application/font-woff2           woff2;
+    #application/vnd.ms-fontobject    eot;
+
+    location ~* \.(eot|otf|ttf|woff|woff2)$ {
+        add_header Access-Control-Allow-Origin *;
+    }
+
+    location / {
+        # try to serve file directly, fallback to index.php
+        try_files $uri /index.php$is_args$args;
+    }
+
+    # DEV
+    # This rule should only be placed on your development environment
+    # In production, don't include this and don't deploy index_dev.php
+    location ~ ^/(index_dev)\.php(/|$) {
+        fastcgi_pass ${NGINX_PHP_BACKEND_NAME}:${NGINX_PHP_BACKEND_PORT};
+        fastcgi_split_path_info ^(.+\.php)(/.*)$;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param HTTPS off;
+        fastcgi_buffers 4 256k;
+        fastcgi_buffer_size 256k;
+    }
+
+    # PROD
+    location ~ ^/index\.php(/|$) {
+        fastcgi_pass ${NGINX_PHP_BACKEND_NAME}:${NGINX_PHP_BACKEND_PORT};
+        fastcgi_split_path_info ^(.+\.php)(/.*)$;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param HTTPS off;
+        fastcgi_buffers 4 256k;
+        fastcgi_buffer_size 256k;
+        internal;
+    }
+
+    # Set expires max on static file types
+    location ~* ^.+\.(css|js|jpg|jpeg|gif|png|ico|gz|svg|svgz|ttf|otf|woff|eot|mp4|ogg|ogv|webm)$ {
+      expires max;
+      root   ${NGINX_PUBLIC_DIR};
+      access_log off;
+    }
+}

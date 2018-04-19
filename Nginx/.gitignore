@@ -1,0 +1,13 @@
+/vendor/
+/node_modules/
+.idea*
+*~
+bower_components
+/web/css/
+/web/js
+/web/plugins
+/src/Resources/manifest/
+.cache
+web/images/resize/
+composer.lock
+.env
