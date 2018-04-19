@@ -8,7 +8,9 @@ services:
       environment:
         - VIRTUAL_HOST=${GITLAB_VIRTUAL_HOST}
       ports:
-        - 3000:80
+        - "3000:80"
+        - "22:22"
+        - "3001:443"
       volumes:
         - /data/gitlab/config:/etc/gitlab
         - /data/gitlab/logs:/var/log/gitlab

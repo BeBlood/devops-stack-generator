@@ -30,3 +30,9 @@ $ make start
 ```bash
 $ sudo make install-hosts
 ```
+
+INFORMATION
+-----------
+
+This tool expose the port [3000;3001] for public access  
+But to use public ssh access you can use the default port (22)
