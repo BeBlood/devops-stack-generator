@@ -6,6 +6,11 @@ network_name = $(shell $(ENVVARS) && echo "$$NETWORK_NAME")
 network_id = $(shell docker network ls -q -f name="$(network_name)")
 project_hosts= $(shell cat .env | grep -v ^\# | grep -oP "HOST=\K(.*+)" | tr "," " ")
 
+*: .env
+
+.env:
+	cp .env.dist .env
+
 # REVERSE PROXY
 
 .PHONY: network

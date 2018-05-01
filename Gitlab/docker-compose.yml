@@ -6,7 +6,10 @@ services:
       container_name: ${GITLAB_CONTAINER_NAME}
       image: gitlab/gitlab-ce:latest
       environment:
+        - SMTP_USER=${GITLAB_SMTP_USER}
+        - SMTP_PASSWORD=${GITLAB_SMTP_PASSWORD}
         - VIRTUAL_HOST=${GITLAB_VIRTUAL_HOST}
+        - GITLAB_OMNIBUS_CONFIG="external_url 'http://beblood.fr:3000/'; gitlab_rails['lfs_enabled'] = true;"
       ports:
         - "3000:80"
         - "22:22"
