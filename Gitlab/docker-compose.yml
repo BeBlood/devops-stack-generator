@@ -10,7 +10,7 @@ services:
         - SMTP_USER=${GITLAB_SMTP_USER}
         - SMTP_PASSWORD=${GITLAB_SMTP_PASSWORD}
         - VIRTUAL_HOST=${GITLAB_VIRTUAL_HOST}
-        - GITLAB_OMNIBUS_CONFIG="external_url 'http://beblood.fr:3000/'; gitlab_rails['lfs_enabled'] = true;"
+        - GITLAB_OMNIBUS_CONFIG="gitlab_rails['gitlab_ssh_host'] = '${GITLAB_SSH_URL}';"
       ports:
         - "3000:80"
         - "22:22"
