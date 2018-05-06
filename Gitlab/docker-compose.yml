@@ -6,6 +6,7 @@ services:
       container_name: ${GITLAB_CONTAINER_NAME}
       image: gitlab/gitlab-ce:latest
       environment:
+        - SMTP_ENABLED=true
         - SMTP_USER=${GITLAB_SMTP_USER}
         - SMTP_PASSWORD=${GITLAB_SMTP_PASSWORD}
         - VIRTUAL_HOST=${GITLAB_VIRTUAL_HOST}
