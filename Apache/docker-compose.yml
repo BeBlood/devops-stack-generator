@@ -46,16 +46,8 @@ services:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
 
-  adminer:
-    container_name: ${ADMINER_CONTAINER_NAME}
-    image: adminer
-    environment:
-      - VIRTUAL_HOST=${ADMINER_VIRTUAL_HOST}
-    depends_on:
-      - mysql
-
 volumes:
-  stack_mysql: # A modifier car pas dynamique = ${MYSQL_CONTAINER_NAME}
+  stack_mysql: # MYSQL_VOLUME
 
 networks:
   default:
