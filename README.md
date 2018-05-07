@@ -18,7 +18,7 @@ Tools :
 * [ ] Ansible
 * [X] Gitlab
 
-+ Project Builder
+With the Project Builder
 
 Instructions for project builder
 --------------------------------
