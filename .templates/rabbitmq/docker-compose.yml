@@ -1,0 +1,8 @@
+  rabbitmq:
+    image: rabbitmq:${RABBITMQ_VERSION}-management
+    container_name: ${RABBITMQ_CONTAINER_NAME}
+    environment:
+      - VIRTUAL_PORT=15672
+      - VIRTUAL_HOST=${RABBITMQ_VIRTUAL_HOST}
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}

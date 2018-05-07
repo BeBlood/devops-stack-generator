@@ -1,0 +1,14 @@
+  supervisord:
+    container_name: ${SUPERVISORD_CONTAINER_NAME}
+    image: supervisord
+    build:
+      context: ./.docker/supervisord
+      args:
+        PHP_VERSION: ${PHP_VERSION}
+    volumes:
+      - .:/var/www/html
+      - ./.docker/supervisord/workers:/etc/supervisor/conf.d/
+      - ${SUPERVISORD_VOLUME_NAME}:/tmp
+    depends_on:
+      - mysql
+      - php
