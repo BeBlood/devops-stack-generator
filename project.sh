@@ -2,6 +2,7 @@
 STACK_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 export $(cat $STACK_PATH/.env | grep -v ^\#)
 PROJECTS_REPOSITORY_PATH=${PROJECTS_REPOSITORY_PATH/'$HOME'/$HOME}
+TEMPLATES_PATH="$STACK_PATH/.templates"
 HEIGHT=15
 WIDTH=40
 TITLE="Création du projet"
@@ -51,13 +52,44 @@ function get_choices()
   echo $CHOICES
 } # END get_choices
 
-# Update variables in .env file
+# Update variables in .env.dist file
 function update_env()
 {
   VAR_NAME=$1
 
-  sed -i "s/^$VAR_NAME=.*/$VAR_NAME=${PROJECT[$VAR_NAME]}/" '.env'
+  sed -i "s/^$VAR_NAME=.*/$VAR_NAME=${PROJECT[$VAR_NAME]}/" '.env.dist'
 } # END update_env
+
+function add_volume_docker_compose()
+{
+  VOLUME_NAME=$1
+
+  sed -i "/^volumes:/a\\  $VOLUME_NAME:" 'docker-compose.yml'
+}
+
+function add_template()
+{
+  TEMPLATE_NAME=$1
+
+  # docker-compose.yml template
+  DOCKER_COMPOSE_CONFIGURATION=$(cat "$TEMPLATES_PATH/$TEMPLATE_NAME/docker-compose.yml")
+  APPEND_BEFORE_LINE=$(grep -n "^volumes:" 'docker-compose.yml' | cut -d : -f 1)
+  OUTPUT="$(awk -v "s=$DOCKER_COMPOSE_CONFIGURATION\n" -v "l=$APPEND_BEFORE_LINE" 'NR==l{print s} 1' 'docker-compose.yml')"
+  echo "$OUTPUT" > 'docker-compose.yml'
+
+  #.env template
+  ENV_TEMPLATE_PATH="$TEMPLATES_PATH/$TEMPLATE_NAME/.env"
+  if [ -f $ENV_TEMPLATE_PATH ]; then
+    ENV_CONFIGURATION=$(cat "$ENV_TEMPLATE_PATH")
+    printf "\n$ENV_CONFIGURATION" >> '.env.dist'
+  fi
+
+  #conf template
+  ENV_TEMPLATE_PATH="$TEMPLATES_PATH/$TEMPLATE_NAME/conf"
+  if [ -d $ENV_TEMPLATE_PATH ]; then
+    cp -r "$ENV_TEMPLATE_PATH" "${PROJECT["PATH"]}/.docker/$TEMPLATE_NAME/"
+  fi
+}
 
 # Build mysql configuration
 function build_mysql()
@@ -78,6 +110,9 @@ function build_mysql()
   update_env "MYSQL_USER"
   update_env "MYSQL_PASSWORD"
   update_env "MYSQL_DATABASE"
+
+  to_replace=`cat docker-compose.yml | grep "MYSQL_VOLUME"`
+  sed -i "s/$to_replace/  ${PROJECT["MYSQL_CONTAINER_NAME"]}:/" 'docker-compose.yml'
 } # build_mysql
 
 # Build php configuration
@@ -97,11 +132,38 @@ function build_php()
 # Build adminer configuration
 function build_adminer()
 {
+  add_template "adminer"
+
   PROJECT["ADMINER_CONTAINER_NAME"]="${PROJECT["PROJECT_NAME"]}_adminer"
   PROJECT["ADMINER_VIRTUAL_HOST"]="adminer.${PROJECT["PROJECT_NAME"]}.docker"
   update_env "ADMINER_CONTAINER_NAME"
   update_env "ADMINER_VIRTUAL_HOST"
 } # build_adminer
+
+# Build rabbitmq configuration
+function build_rabbitmq()
+{
+    add_template "rabbitmq"
+
+    PROJECT["RABBITMQ_CONTAINER_NAME"]="${PROJECT["PROJECT_NAME"]}_rabbitmq"
+    PROJECT["RABBITMQ_USER"]="${PROJECT["PROJECT_NAME"]}"
+    PROJECT["RABBITMQ_PASSWORD"]="${PROJECT["PROJECT_NAME"]}"
+    update_env "RABBITMQ_CONTAINER_NAME"
+    update_env "RABBITMQ_USER"
+    update_env "RABBITMQ_PASSWORD"
+} # build_rabbitmq
+
+# Build supervisord configuration
+function build_supervisord()
+{
+    add_template "supervisord"
+
+    PROJECT["SUPERVISORD_CONTAINER_NAME"]="${PROJECT["PROJECT_NAME"]}_supervisord"
+    update_env "SUPERVISORD_CONTAINER_NAME"
+    
+    add_volume_docker_compose "${PROJECT["SUPERVISORD_CONTAINER_NAME"]}"
+    sed -i "s/\${SUPERVISORD_VOLUME_NAME}/${PROJECT["SUPERVISORD_CONTAINER_NAME"]}/" 'docker-compose.yml'
+} # build_supervisord
 
 # Build apache addons configurations
 function build_apache_addons()
@@ -109,7 +171,7 @@ function build_apache_addons()
   OPTIONS=(
     1 "Adminer" "Adminer"
     2 "RabbitMQ" "RabbitMQ"
-    3 "JEA" "JEA"
+    3 "Supervisord" "Supervisord"
   )
   CHOICES=$(get_choices $OPTIONS "Voulez vous une de ces dépendences additionelles")
   for CHOICE in $CHOICES
@@ -117,6 +179,12 @@ function build_apache_addons()
       case $CHOICE in
               1) # Adminer
                 build_adminer
+              ;;
+              2) # RabbitMQ
+                build_rabbitmq
+              ;;
+              3)
+                build_supervisord
               ;;
       esac
   done
@@ -133,7 +201,14 @@ function build_project()
   update_env "NETWORK_NAME"
   update_env "PROJECT_DEV_HOST"
 
-  build_$(echo "${PROJECT["STACK"]}" | tr '[:upper:]' '[:lower:]')_project
+  FUNCTION="build_$(echo "${PROJECT["STACK"]}" | tr '[:upper:]' '[:lower:]')_project"
+  if [ -n "$(type $FUNCTION | grep "$FUNCTION ()")" ]; then
+      $FUNCTION
+      clear
+  else
+      printf "\033c"
+      echo "La configuration pour cette stack n'est pas disponible"
+  fi
 } # END build_project
 
 # Build apache project
@@ -154,32 +229,38 @@ function build_apache_project()
   build_mysql
   # ADD-ONS
   build_apache_addons
-  clear
 } # END build_apache_project
 
 ######################
 #        MAIN        #
 ######################
-
-PROJECT["PROJECT_NAME"]=$(read "Veuillez rentrez le nom de votre nouveau projet:")
+PROJECT["PROJECT_NAME"]=$(read "Veuillez rentrez le nom de votre nouveau projet:" | tr ' ' '-' | tr '[:upper:]' '[:lower:]')
 PROJECT["NETWORK_NAME"]="${PROJECT["PROJECT_NAME"]}-dev"
 PROJECT["PROJECT_DEV_HOST"]="${PROJECT["PROJECT_NAME"]}.docker"
-
 PROJECT["PATH"]="$PROJECTS_REPOSITORY_PATH/${PROJECT["PROJECT_NAME"]}"
+
 if [ -d "${PROJECT["PATH"]}" ]; then
   clear
   echo "Le nom du dossier/projet est déjà pris"
   exit 1
 fi
+
 mkdir "${PROJECT["PATH"]}"
 cd "${PROJECT["PATH"]}"
 
-OPTIONS=(
-  1 "Apache"
-  2 "Nginx"
-  3 "Symfony"
-)
+AVAILABLE_STACKS=$(ls -d $STACK_PATH/*/ | nl | tr '\n' ' ')
+OPTIONS=($(echo $AVAILABLE_STACKS | sed -r "s~$STACK_PATH~~g" | tr '//' ' '))
 
 build_project "${OPTIONS[($(get_choice $OPTIONS "Choisissez une base de projet")-1)*2+1]}"
-echo "Le projet a bien été créé avec ce fichier de configuration:"
-cat .env
+
+printf "Le projet a bien été créé avec ces fichiers de configuration:"
+
+printf "\n#############"
+printf "\n#    ENV    #"
+printf "\n#############\n"
+cat '.env.dist'
+
+printf "\n########################"
+printf "\n#    DOCKER-COMPOSE    #"
+printf "\n########################\n"
+cat 'docker-compose.yml'
