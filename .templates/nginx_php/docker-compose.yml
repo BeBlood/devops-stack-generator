@@ -1,0 +1,16 @@
+  nginx:
+    container_name: ${NGINX_CONTAINER_NAME}
+    build:
+      context: .docker/nginx_php
+      dockerfile: Dockerfile-${NGINX_VERSION}
+      args:
+          - NGINX_PUBLIC_DIR=${NGINX_PUBLIC_DIR}
+          - NGINX_PHP_BACKEND_NAME=${PHP_CONTAINER_NAME}
+          - NGINX_PHP_BACKEND_PORT=${PHP_PORT}
+          - HOST_UID=${HOST_UID}
+    environment:
+      - VIRTUAL_HOST=${PROJECT_DEV_HOST}
+    volumes_from:
+      #PHP_DEPEND- php
+    depends_on:
+      #PHP_DEPEND- php
