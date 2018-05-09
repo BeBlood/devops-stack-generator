@@ -1,0 +1,27 @@
+<VirtualHost *:${APACHE_PORT}>
+  DocumentRoot ${APACHE_DOCUMENT_ROOT}
+  ServerName ${APACHE_SERVER_NAME}
+
+  <Directory ${APACHE_DOCUMENT_ROOT}>
+      Options Indexes FollowSymLinks
+      AllowOverride All
+      Require all granted
+  </Directory>
+
+  <FilesMatch "\.php$">
+      SetHandler  "proxy:fcgi://${APACHE_PHP_BACKEND_NAME}:${APACHE_PHP_BACKEND_PORT}/"
+  </FilesMatch>
+
+  RewriteEngine On
+  #Proxy to production images if local images are not found
+  RewriteCond %{REQUEST_URI} ^/img/[^\/]*/.*$
+  RewriteCond %{DOCUMENT_ROOT}%{REQUEST_FILENAME} !-f
+  RewriteRule ^(.*)$ ${PROJECT_PROD_URL}/$1 [QSA,L]
+
+  # Directory indexes
+  <IfModule dir_module>
+      DirectoryIndex index.php index.html
+  </IfModule>
+  ErrorLog /dev/stderr
+  CustomLog /dev/stdout combined
+</VirtualHost>
