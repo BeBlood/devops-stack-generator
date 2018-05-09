@@ -1,0 +1,13 @@
+  php:
+    container_name: ${PHP_CONTAINER_NAME}
+    build:
+      context: .docker/php
+      dockerfile: Dockerfile-${PHP_VERSION}
+      args:
+        - PHP_PORT=${PHP_PORT}
+        - HOST_UID=${HOST_UID}
+    user: ${HOST_UID}
+    volumes:
+      - ${PROJECT_PUBLIC_DIR}:/var/www/html:rw
+    depends_on:
+      #MYSQL_DEPEND- mysql
