@@ -10,5 +10,5 @@
       - ./.docker/supervisord/workers:/etc/supervisor/conf.d/
       - ${SUPERVISORD_VOLUME_NAME}:/tmp
     depends_on:
-      - mysql
-      - php
+      #MYSQL_DEPEND- mysql
+      #PHP_DEPEND- php
