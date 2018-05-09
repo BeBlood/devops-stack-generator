@@ -1,0 +1,10 @@
+version: '2'
+
+services:
+
+volumes:
+
+networks:
+  default:
+    external:
+      name: ${NETWORK_NAME}
