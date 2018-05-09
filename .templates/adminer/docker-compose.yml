@@ -4,4 +4,4 @@
     environment:
       - VIRTUAL_HOST=${ADMINER_VIRTUAL_HOST}
     depends_on:
-      - mysql
+      #MYSQL_DEPEND- mysql
