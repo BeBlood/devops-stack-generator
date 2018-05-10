@@ -48,7 +48,7 @@ network:
 
 .PHONY: start-reverse-proxy
 start-reverse-proxy: network
-	if [ -z "$(reverse_proxy_container_id)" ]; then \
+	@if [ -z "$(reverse_proxy_container_id)" ]; then \
 		printf "\nCreating and starting '$(reverse_proxy_container_name)'"; \
 		docker run -d --rm \
 			--name "$(reverse_proxy_container_name)" \
@@ -57,7 +57,7 @@ start-reverse-proxy: network
 			-v "$(shell pwd)/.docker/proxy/proxy.conf:/etc/nginx/conf.d/proxy.conf:ro" \
 			jwilder/nginx-proxy \
 		; \
-       	fi
+  fi
 
 .PHONY: attaching-reverse-proxy-network
 attaching-reverse-proxy-network: start-reverse-proxy
@@ -69,7 +69,7 @@ stop-reverse-proxy:
 	@if [ -n "$(reverse_proxy_container_id)" ]; then \
 		printf "\nStoping '$(reverse_proxy_container_name)'"; \
 		docker stop "$(reverse_proxy_container_name)"; \
-   	fi
+  fi
 
 
 .PHONY: install-hosts
@@ -82,7 +82,7 @@ install-hosts: root
 .PHONY: uninstall-hosts
 uninstall-hosts: root
 	@to_remove="$(shell grep -P "(\d+\.){3}(\d+)\t$(project_hosts)" "/etc/hosts")"; \
-	if [ -n "$$to_remove" ]; then \
+	@if [ -n "$$to_remove" ]; then \
 		echo "Uninstall hosts"; \
 		ex -s -c "g/$$to_remove/d" -c "wq" "/etc/hosts"; \
 	fi
