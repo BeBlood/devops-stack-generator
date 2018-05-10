@@ -3,6 +3,7 @@ STACK_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 export $(cat $STACK_PATH/.env | grep -v ^\#)
 PROJECTS_REPOSITORY_PATH=${PROJECTS_REPOSITORY_PATH/'$HOME'/$HOME}
 TEMPLATES_PATH="$STACK_PATH/.templates"
+RESSOURCES_PATH="$STACK_PATH/.ressources"
 HEIGHT=15
 WIDTH=40
 TITLE="Création du projet"
@@ -362,6 +363,12 @@ function build_custom_project()
         build_mysql
     fi
 
+    mkdir 'sources'
+    mkdir 'sources/public'
+    mkdir 'sources/public/img'
+    cp "$RESSOURCES_PATH/public/index.html" 'sources/public/index.html'
+    sed -i "s/"'$SERVER_NAME'"/${PROJECT["SERVER"]}/" 'sources/public/index.html'
+    cp "$RESSOURCES_PATH/public/img/${PROJECT["SERVER"]}.png" 'sources/public/img/logo.png'
 } # END build_custom_project
 
 ######################
