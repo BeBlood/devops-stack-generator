@@ -6,10 +6,12 @@
       args:
         - APACHE_PORT=${APACHE_PORT}
         - APACHE_DOCUMENT_ROOT=${APACHE_DOCUMENT_ROOT}
+        - APACHE_PUBLIC_DIR=${APACHE_PUBLIC_DIR}
         - APACHE_SERVER_NAME=${PROJECT_DEV_HOST}
         - APACHE_PHP_BACKEND_NAME=${PHP_CONTAINER_NAME}
         - APACHE_PHP_BACKEND_PORT=${PHP_PORT}
         - PROJECT_PROD_URL=${PROJECT_PROD_URL}
+        - HOST_UID=${HOST_UID}
     volumes:
       - ${PROJECT_PUBLIC_DIR}:/var/www/html:rw
     environment:

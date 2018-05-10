@@ -2,10 +2,14 @@ FROM debian:jessie
 
 ARG APACHE_PORT
 ARG APACHE_DOCUMENT_ROOT
+ARG APACHE_PUBLIC_DIR
 ARG APACHE_SERVER_NAME
 ARG APACHE_PHP_BACKEND_NAME
 ARG APACHE_PHP_BACKEND_PORT
 ARG PROJECT_PROD_URL
+ARG HOST_UID
+
+RUN usermod -u $HOST_UID www-data
 
 RUN echo 'deb http://ftp.fr.debian.org/debian/ jessie non-free' >> /etc/apt/sources.list
 RUN echo 'deb-src http://ftp.fr.debian.org/debian/ jessie non-free' >> /etc/apt/sources.list
@@ -15,9 +19,9 @@ RUN apt-get -y install gettext apache2 libapache2-mod-fastcgi
 RUN rm /etc/apache2/sites-enabled/*
 
 COPY apache.sh /opt/docker/apache.sh
+RUN chmod 755 /opt/docker/apache.sh
 COPY vhost.conf.template /etc/apache2/sites-available/vhost.conf.template
-
-RUN envsubst '$PROJECT_PROD_URL $APACHE_PORT $APACHE_DOCUMENT_ROOT $APACHE_SERVER_NAME $APACHE_PHP_BACKEND_NAME $APACHE_PHP_BACKEND_PORT' < /etc/apache2/sites-available/vhost.conf.template > /etc/apache2/sites-available/vhost.conf
+RUN envsubst '$APACHE_PUBLIC_DIR $PROJECT_PROD_URL $APACHE_PORT $APACHE_DOCUMENT_ROOT $APACHE_SERVER_NAME $APACHE_PHP_BACKEND_NAME $APACHE_PHP_BACKEND_PORT' < /etc/apache2/sites-available/vhost.conf.template > /etc/apache2/sites-available/vhost.conf
 
 RUN a2enmod headers
 RUN a2enmod rewrite

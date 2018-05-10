@@ -1,8 +1,8 @@
 <VirtualHost *:${APACHE_PORT}>
-  DocumentRoot ${APACHE_DOCUMENT_ROOT}
+  DocumentRoot ${APACHE_PUBLIC_DIR}
   ServerName ${APACHE_SERVER_NAME}
 
-  <Directory ${APACHE_DOCUMENT_ROOT}>
+  <Directory ${APACHE_PUBLIC_DIR}>
       Options Indexes FollowSymLinks
       AllowOverride All
       Require all granted
