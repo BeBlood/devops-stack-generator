@@ -104,5 +104,5 @@ start: attaching-reverse-proxy-network network
 .PHONY: stop
 stop: stop-reverse-proxy
 	@printf "\nStoping project\n"
-	@docker-compose stop
+	@docker-compose stop && docker-compose rm -f
 	@printf "\nProject stoped !\n"
