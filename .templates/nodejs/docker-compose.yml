@@ -1,0 +1,11 @@
+  nodejs:
+    container_name: ${NODEJS_CONTAINER_NAME}
+    build:
+      context: .docker/nodejs
+      dockerfile: Dockerfile
+      args:
+        - NODEJS_PORT=${NODEJS_PORT}
+    volumes:
+      - ${PROJECT_SOURCE_DIR}:/usr/src/app
+    environment:
+      - VIRTUAL_HOST=${NODEJS_DEV_HOST}
