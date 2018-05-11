@@ -171,7 +171,8 @@ function build_homepage()
     mkdir "$DEFAULT_PROJECT_SOURCE_DIR/public"
     mkdir "$DEFAULT_PROJECT_SOURCE_DIR/public/img"
 
-    if [ "${PROJECT["SERVER"]}" = "nginx" ]; then
+    BASE_SERVER=`echo ${PROJECT["SERVER"]} | sed -E "s/(.*)_.*/\1/"`
+    if [ "$BASE_SERVER" = "nginx" ]; then
         file_extension="php"
     else
         file_extension="html"
@@ -179,7 +180,7 @@ function build_homepage()
 
     cp "$RESOURCES_PATH/public/index.html" "$DEFAULT_PROJECT_SOURCE_DIR/public/index.$file_extension"
     sed -i "s/"'$SERVER_NAME'"/${PROJECT["SERVER"]}/" "$DEFAULT_PROJECT_SOURCE_DIR/public/index.$file_extension"
-    cp "$RESOURCES_PATH/public/img/${PROJECT["SERVER"]}.png" "$DEFAULT_PROJECT_SOURCE_DIR/public/img/logo.png"
+    cp "$RESOURCES_PATH/public/img/$BASE_SERVER.png" "$DEFAULT_PROJECT_SOURCE_DIR/public/img/logo.png"
 }
 
 function build_addons_array()
