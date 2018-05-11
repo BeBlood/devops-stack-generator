@@ -8,6 +8,6 @@
         - HOST_UID=${HOST_UID}
     user: ${HOST_UID}
     volumes:
-      - ${PROJECT_PUBLIC_DIR}:/var/www/html:rw
+      - ${PROJECT_SOURCE_DIR}:/var/www/html:rw
     depends_on:
       #MYSQL_DEPEND- mysql
