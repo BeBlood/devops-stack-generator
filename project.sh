@@ -1,9 +1,10 @@
 #!/bin/bash
 STACK_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-export $(cat $STACK_PATH/.env | grep -v ^\#)
+export $(cat "$STACK_PATH/.env" | grep -v ^\#)
 PROJECTS_REPOSITORY_PATH=${PROJECTS_REPOSITORY_PATH/'$HOME'/$HOME}
 TEMPLATES_PATH="$STACK_PATH/.templates"
-RESSOURCES_PATH="$STACK_PATH/.ressources"
+RESOURCES_PATH="$STACK_PATH/.resources"
+DEFAULT_PROJECT_SOURCE_DIR=$(cat "$TEMPLATES_PATH/.env" | grep -oP "PROJECT_SOURCE_DIR=\K(.*)")
 HEIGHT=15
 WIDTH=40
 TITLE="Création du projet"
@@ -153,6 +154,23 @@ function get_available_versions()
   echo ${VERSIONS[@]}
 } # get_available_versions
 
+function build_homepage()
+{
+    mkdir "$DEFAULT_PROJECT_SOURCE_DIR"
+    mkdir "$DEFAULT_PROJECT_SOURCE_DIR/public"
+    mkdir "$DEFAULT_PROJECT_SOURCE_DIR/public/img"
+
+    if [ "${PROJECT["SERVER"]}" = "nginx" ]; then
+        file_extension="php"
+    else
+        file_extension="html"
+    fi
+
+    cp "$RESOURCES_PATH/public/index.html" "$DEFAULT_PROJECT_SOURCE_DIR/public/index.$file_extension"
+    sed -i "s/"'$SERVER_NAME'"/${PROJECT["SERVER"]}/" "$DEFAULT_PROJECT_SOURCE_DIR/public/index.$file_extension"
+    cp "$RESOURCES_PATH/public/img/${PROJECT["SERVER"]}.png" "$DEFAULT_PROJECT_SOURCE_DIR/public/img/logo.png"
+}
+
 ##################
 #   CONTAINERS   #
 ##################
@@ -175,6 +193,34 @@ function build_nginx()
     update_env "NGINX_CONTAINER_NAME"
     update_env "NGINX_VERSION"
 }
+
+# Build nodejs configuration
+function build_nodejs()
+{
+    add_template "nodejs"
+
+    if ! [ -d "$DEFAULT_PROJECT_SOURCE_DIR" ]; then
+        mkdir "$DEFAULT_PROJECT_SOURCE_DIR"
+    fi
+
+    PROJECT["NODEJS_CONTAINER_NAME"]="${PROJECT["PROJECT_NAME"]}_nodejs"
+    update_env "NODEJS_CONTAINER_NAME"
+
+    if [ ${PROJECT["SERVER"]} = "nodejs" ]; then
+      PROJECT["NODEJS_DEV_HOST"]="${PROJECT["PROJECT_NAME"]}.docker"
+    else
+        PROJECT["NODEJS_DEV_HOST"]="nodejs.${PROJECT["PROJECT_NAME"]}.docker"
+    fi
+    update_env "NODEJS_DEV_HOST"
+
+    cp "$RESOURCES_PATH/nodejs/package.json" "$DEFAULT_PROJECT_SOURCE_DIR"
+    sed -i 's/${PROJECT_NAME}/'"${PROJECT["PROJECT_NAME"]}/" "$DEFAULT_PROJECT_SOURCE_DIR/package.json"
+
+    NODEJS_PORT=$(cat "$TEMPLATES_PATH/nodejs/.env" | grep -oP "NODEJS_PORT=\K(.*)")
+
+    cp "$RESOURCES_PATH/nodejs/main.js" "$DEFAULT_PROJECT_SOURCE_DIR"
+    sed -i 's/$NODEJS_PORT/'"$NODEJS_PORT"'/' "$DEFAULT_PROJECT_SOURCE_DIR/main.js"
+} # build_nodejs
 
 # Build mysql configuration
 function build_mysql()
@@ -255,24 +301,20 @@ function build_addons()
     1 "Adminer" "Adminer"
     2 "RabbitMQ" "RabbitMQ"
     3 "Supervisord" "Supervisord"
+    4 "NodeJS" "NodeJS"
   )
   CHOICES=$(get_choices $OPTIONS "Voulez vous une de ces dépendences additionelles")
-  echo ${CHOICES[@]}
+
   for CHOICE in $CHOICES
   do
       case $CHOICE in
-              1) # Adminer
-                build_adminer
-              ;;
-              2) # RabbitMQ
-                build_rabbitmq
-              ;;
-              3)
-                build_supervisord
-              ;;
+              1) build_adminer ;;
+              2) build_rabbitmq ;;
+              3) build_supervisord ;;
+              4) build_nodejs ;;
+
       esac
   done
-  clear
 } # build_addons
 
 ###############
@@ -342,33 +384,35 @@ function build_custom_project()
     OPTIONS=(
       1 "Apache"
       2 "Nginx"
+      3 "NodeJS"
     )
     SERVER=$(echo "${OPTIONS[($(get_choice $OPTIONS "Choisissez votre serveur web")-1)*2+1]}" | tr '[:upper:]' '[:lower:]')
 
-    OPTIONS=(
-      1 "PHP"
-      2 "Ruby"
-    )
-    LANGUAGE=$(echo "${OPTIONS[($(get_choice $OPTIONS "Choisissez le language interpreté par le serveur")-1)*2+1]}" | tr '[:upper:]' '[:lower:]')
+    if [ $SERVER = "nodejs" ]; then
+        PROJECT["SERVER"]="$SERVER"
+        "build_$SERVER"
+    else
+        OPTIONS=(
+          1 "PHP"
+          2 "Ruby"
+        )
+        LANGUAGE=$(echo "${OPTIONS[($(get_choice $OPTIONS "Choisissez le language interpreté par le serveur")-1)*2+1]}" | tr '[:upper:]' '[:lower:]')
 
-    PROJECT["SERVER"]="$SERVER"_"$LANGUAGE"
-    add_template "$SERVER"_"$LANGUAGE"
-    "build_$SERVER"
-    add_template "$LANGUAGE"
-    "build_$LANGUAGE"
+        PROJECT["SERVER"]="$SERVER"_"$LANGUAGE"
+        echo "$SERVER"_"$LANGUAGE"
+        echo ${PROJECT["SERVER"]}
+        add_template "$SERVER"_"$LANGUAGE"
+        "build_$SERVER"
+        add_template "$LANGUAGE"
+        "build_$LANGUAGE"
+    fi
 
-
-    if [ $(ask "Voulez vous utiliser MySQL ?") -eq 0 ]; then
+    if [ $(ask "Voulez vous utiliser MySQL ?") -eq 0 ]; then # or a database server more generally
         add_template "mysql"
         build_mysql
     fi
 
-    mkdir 'sources'
-    mkdir 'sources/public'
-    mkdir 'sources/public/img'
-    cp "$RESSOURCES_PATH/public/index.html" 'sources/public/index.html'
-    sed -i "s/"'$SERVER_NAME'"/${PROJECT["SERVER"]}/" 'sources/public/index.html'
-    cp "$RESSOURCES_PATH/public/img/${PROJECT["SERVER"]}.png" 'sources/public/img/logo.png'
+    build_homepage
 } # END build_custom_project
 
 ######################
