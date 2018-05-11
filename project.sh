@@ -154,6 +154,17 @@ function get_available_versions()
   echo ${VERSIONS[@]}
 } # get_available_versions
 
+function list_templates_by_category()
+{
+  CATEGORY=$1
+  for dir in `ls -d $TEMPLATES_PATH/*/`
+  do
+    if [ -f "$dir/.types/.$CATEGORY" ]; then
+      echo $(echo $dir | sed "s~$TEMPLATES_PATH/~~" | tr '/' ' ' | sed -E "s/(.*)_.*/\1/")
+    fi
+  done
+}
+
 function build_homepage()
 {
     mkdir "$DEFAULT_PROJECT_SOURCE_DIR"
@@ -169,6 +180,15 @@ function build_homepage()
     cp "$RESOURCES_PATH/public/index.html" "$DEFAULT_PROJECT_SOURCE_DIR/public/index.$file_extension"
     sed -i "s/"'$SERVER_NAME'"/${PROJECT["SERVER"]}/" "$DEFAULT_PROJECT_SOURCE_DIR/public/index.$file_extension"
     cp "$RESOURCES_PATH/public/img/${PROJECT["SERVER"]}.png" "$DEFAULT_PROJECT_SOURCE_DIR/public/img/logo.png"
+}
+
+function build_addons_array()
+{
+    RAW_ADDONS=(`list_templates_by_category "addon" | cat -n -`)
+    for (( i=0; i<${#RAW_ADDONS[@]}; i=i+2))
+    do
+      echo ${RAW_ADDONS[$i]} ${RAW_ADDONS[$i+1]^} off
+    done
 }
 
 ##################
@@ -297,12 +317,7 @@ function build_supervisord()
 # Build apache addons configurations
 function build_addons()
 {
-  OPTIONS=(
-    1 "Adminer" "Adminer"
-    2 "RabbitMQ" "RabbitMQ"
-    3 "Supervisord" "Supervisord"
-    4 "NodeJS" "NodeJS"
-  )
+  OPTIONS=(`build_addons_array "${INDEX_ADDONS[@]}"`)
   CHOICES=$(get_choices $OPTIONS "Voulez vous une de ces dépendences additionelles")
 
   for CHOICE in $CHOICES
@@ -312,7 +327,6 @@ function build_addons()
               2) build_rabbitmq ;;
               3) build_supervisord ;;
               4) build_nodejs ;;
-
       esac
   done
 } # build_addons
@@ -381,35 +395,28 @@ function build_nginx_project()
 # Build custom project
 function build_custom_project()
 {
-    OPTIONS=(
-      1 "Apache"
-      2 "Nginx"
-      3 "NodeJS"
-    )
+    OPTIONS=(`list_templates_by_category "server" | sort -u | cat -n -`)
     SERVER=$(echo "${OPTIONS[($(get_choice $OPTIONS "Choisissez votre serveur web")-1)*2+1]}" | tr '[:upper:]' '[:lower:]')
 
     if [ $SERVER = "nodejs" ]; then
         PROJECT["SERVER"]="$SERVER"
         "build_$SERVER"
     else
-        OPTIONS=(
-          1 "PHP"
-          2 "Ruby"
-        )
+        OPTIONS=(`list_templates_by_category "language" | sort -u | cat -n -`)
         LANGUAGE=$(echo "${OPTIONS[($(get_choice $OPTIONS "Choisissez le language interpreté par le serveur")-1)*2+1]}" | tr '[:upper:]' '[:lower:]')
 
         PROJECT["SERVER"]="$SERVER"_"$LANGUAGE"
-        echo "$SERVER"_"$LANGUAGE"
-        echo ${PROJECT["SERVER"]}
         add_template "$SERVER"_"$LANGUAGE"
         "build_$SERVER"
         add_template "$LANGUAGE"
         "build_$LANGUAGE"
     fi
 
-    if [ $(ask "Voulez vous utiliser MySQL ?") -eq 0 ]; then # or a database server more generally
-        add_template "mysql"
-        build_mysql
+    if [ $(ask "Voulez vous utiliser un serveur de base de donnée ?") -eq 0 ]; then # or a database server more generally
+        OPTIONS=(`list_templates_by_category "database" | sort -u | cat -n -`)
+        DATABASE=$(echo "${OPTIONS[($(get_choice $OPTIONS "Choisissez votre serveur web")-1)*2+1]}" | tr '[:upper:]' '[:lower:]')
+        add_template "$DATABASE"
+        "build_$DATABASE"
     fi
 
     build_homepage
