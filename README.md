@@ -1,24 +1,7 @@
 DevOPS stack generator
 =============
 
-Stacks :
-
-* [X] Apache
-* [ ] Laravel
-* [X] Nginx
-* [ ] Node
-* [X] Symfony
-* [ ] Wordpress
-* [ ] Ruby on Rails
-* [ ] Django
-* [ ] Elixir
-
-Tools :
-
-* [ ] Ansible
-* [X] Gitlab
-
-With the Project Builder
+The stack generator is a tool that create custom stack from existing stacks or from templates
 
 Instructions for project builder
 --------------------------------
@@ -43,6 +26,25 @@ alias create-project="bash path/to/project.sh"
 ```bash
 $ create-project
 ```
+
+Project builder for existing stack
+------------
+
+/!\ Not available now
+
+Just put the existing stack in the root directory
+
+Existing stacks :
+
+* [X] Apache
+* [ ] Laravel
+* [X] Nginx
+* [ ] Node
+* [X] Symfony
+* [ ] Wordpress
+* [ ] Ruby on Rails
+* [ ] Django
+* [ ] Elixir
 
 Project builder for custom stack
 ------------
