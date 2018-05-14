@@ -102,7 +102,7 @@ new directory in the [.templates](.templates) directory.
 	If in a container you can have a particular depend just add it to the docker-compose.yml template file with
 a **depend token**. If a container with the same label exist, the token will be removed to active the depend. As an example :
 
-```bash
+```yaml
 nginx:
   container_name: ${NGINX_CONTAINER_NAME}
   build:
