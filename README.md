@@ -3,6 +3,15 @@ DevOPS stack generator
 
 The stack generator is a tool that create custom stack from existing stacks or from templates
 
+Requirements
+------------
+
+- Install the dialog package
+
+```bash
+$ sudo apt-get install dialog
+```
+
 Instructions for project builder
 --------------------------------
 
@@ -48,6 +57,8 @@ Existing stacks :
 
 Project builder for custom stack
 ------------
+
+To create a custom stack from template choose the **custom** option in the project builder dialog
 
 Existing templates in [.templates](.templates) directory
 
@@ -121,7 +132,7 @@ nginx:
     #PHP_DEPEND- php
 ```
 
-- How to add user input configuartion ?
+- How to add user input configuration ?
 
 Create a new **function** in the project builder script with the name "build_[NAME OF TEMPLATE]".
 As an example :
